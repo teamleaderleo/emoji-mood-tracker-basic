@@ -61,6 +61,29 @@ export function useEmojiMood() {
     setCurrentMood("🤔");
   };
 
+  const clearLastWeek = () => {
+    // Remove last 7 entries (or however many exist if less than 7)
+    const entriesToRemove = Math.min(7, history.length);
+    setHistory(prev => prev.slice(0, -entriesToRemove));
+    
+    // Reset current mood if we cleared everything
+    if (history.length <= 7) {
+      setCurrentMood("🤔");
+    }
+  };
+
+  const clearToday = () => {
+    // Remove the last entry (most recent mood)
+    if (history.length > 0) {
+      setHistory(prev => prev.slice(0, -1));
+      
+      // Reset current mood if we cleared everything
+      if (history.length === 1) {
+        setCurrentMood("🤔");
+      }
+    }
+  };
+
   // Calculate streak (consecutive same moods)
   const streak = (() => {
     if (history.length === 0) return 0;
@@ -84,6 +107,8 @@ export function useEmojiMood() {
     history: history.map(entry => entry.mood),
     setMood,
     clearHistory,
+    clearLastWeek,
+    clearToday,
     streak,
   };
 }

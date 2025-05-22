@@ -4,7 +4,7 @@ import MoodHistory from "./components/MoodHistory";
 import ClearButton from "./components/ClearButton";
 
 export default function App() {
-  const { mood, history, setMood, clearHistory, streak } = useEmojiMood();
+  const { mood, history, setMood, clearHistory, clearLastWeek, clearToday, streak } = useEmojiMood();
 
   return (
     <div
@@ -19,7 +19,12 @@ export default function App() {
       </p>
 
       <MoodHistory history={history} />
-      <ClearButton onClear={clearHistory} />
+      <ClearButton 
+        onClearAll={clearHistory}
+        onClearWeek={clearLastWeek}
+        onClearToday={clearToday}
+        historyLength={history.length}
+      />
     </div>
   );
 }
