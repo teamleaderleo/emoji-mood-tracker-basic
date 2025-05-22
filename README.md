@@ -75,3 +75,29 @@ The app was built with a focus on:
 - **Performance** - Lightweight bundle with efficient state management
 
 The mood tracking follows a "blocks of 7" approach rather than calendar-based tracking, allowing for more flexible usage patterns while still providing meaningful pattern recognition.
+
+## 🔮 Future Enhancements
+
+### Styling & Animation
+- **Tailwind CSS integration** - Replace custom CSS with utility-first framework for faster development
+- **Subtle micro-interactions** - Gentle hover states, loading animations, and celebration effects
+- **Enhanced transitions** - Smooth page transitions and component state changes
+- **Accessibility animations** - Respect user preferences for reduced motion
+
+### Calendar Features
+- **Calendar view** - Optional calendar interface for users who prefer date-based tracking
+- **Individual day editing** - Ability to select and modify specific days or blocks
+- **Date-based insights** - Weekly/monthly mood trends and patterns
+- **Export functionality** - CSV/JSON export for personal data analysis
+
+### User Experience
+- **Mood notes** - Optional text notes to accompany emoji selections
+- **Custom emoji sets** - Personalized mood emoji collections
+- **Backup/sync** - Cloud storage integration for cross-device access
+- **Mood reminders** - Optional, gentle notifications (not daily guilt trips)
+
+### Technical Improvements
+- **Comprehensive testing** - Unit tests for hooks, integration tests for components
+- **Type safety** - Stricter TypeScript configuration and better type coverage
+- **Performance optimization** - Code splitting and lazy loading for larger feature sets
+- **PWA capabilities** - Offline support and app-like installation
