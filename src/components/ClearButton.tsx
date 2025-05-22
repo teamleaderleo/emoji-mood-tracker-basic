@@ -1,45 +1,42 @@
-import StyledButton from "./StyledButton";
-
 type Props = {
   onClearAll: () => void;
   onClearWeek: () => void;
   onClearToday: () => void;
   historyLength: number;
-  isDarkMode: boolean;
 };
 
-export default function ClearButton({ onClearAll, onClearWeek, onClearToday, historyLength, isDarkMode }: Props) {
+export default function ClearButton({ onClearAll, onClearWeek, onClearToday, historyLength }: Props) {
   if (historyLength === 0) {
     return null; // Don't show clear buttons if no history
   }
 
   return (
-    <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap" }}>
-      <StyledButton
+    <div className="button-group">
+      <button
         onClick={onClearToday}
+        className="button"
         title="Remove the most recent mood"
-        isDarkMode={isDarkMode}
       >
         🗑️ Clear Last
-      </StyledButton>
+      </button>
       
       {historyLength >= 2 && (
-        <StyledButton
+        <button
           onClick={onClearWeek}
+          className="button"
           title="Remove the last 7 moods (or all if less than 7)"
-          isDarkMode={isDarkMode}
         >
           📦 Clear Block
-        </StyledButton>
+        </button>
       )}
       
-      <StyledButton
+      <button
         onClick={onClearAll}
+        className="button"
         title="Remove all mood history"
-        isDarkMode={isDarkMode}
       >
         🧹 Clear All
-      </StyledButton>
+      </button>
     </div>
   );
 }

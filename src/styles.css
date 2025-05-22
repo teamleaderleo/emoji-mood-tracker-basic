@@ -1,4 +1,184 @@
-.App {
+/* CSS Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
   font-family: sans-serif;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+}
+
+/* CSS Custom Properties for Theming */
+:root {
+  --background-light: #ffffff;
+  --text-light: #333333;
+  --card-background-light: #f5f5f5;
+  --border-light: #ddd;
+  --button-background-light: #f0f0f0;
+  --button-hover-light: #e0e0e0;
+  --button-active-light: #d0d0d0;
+  --button-border-light: #ccc;
+}
+
+[data-theme="dark"] {
+  --background: #1a1a1a;
+  --text: #ffffff;
+  --card-background: #2d2d2d;
+  --border: #444;
+  --button-background: #404040;
+  --button-hover: #505050;
+  --button-active: #606060;
+  --button-border: #555;
+}
+
+[data-theme="light"] {
+  --background: var(--background-light);
+  --text: var(--text-light);
+  --card-background: var(--card-background-light);
+  --border: var(--border-light);
+  --button-background: var(--button-background-light);
+  --button-hover: var(--button-hover-light);
+  --button-active: var(--button-active-light);
+  --button-border: var(--button-border-light);
+}
+
+/* Common Component Styles */
+.card {
+  background-color: var(--card-background);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.card-large {
+  border-radius: 12px;
+}
+
+.button {
+  background-color: var(--button-background);
+  color: var(--text);
+  border: 1px solid var(--button-border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.button:hover {
+  background-color: var(--button-hover);
+}
+
+.button:active {
+  background-color: var(--button-active);
+}
+
+.emoji-button {
+  background-color: var(--button-background);
+  border: 2px solid var(--button-border);
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 60px;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-button:hover {
+  background-color: var(--button-hover);
+  transform: scale(1.05);
+}
+
+.emoji-button:active {
+  background-color: var(--button-active);
+  transform: scale(0.95);
+}
+
+/* Layout Classes */
+.app-container {
+  background-color: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.main-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(300px, 2fr) minmax(250px, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+  align-items: start;
+}
+
+.center-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  gap: clamp(0.5rem, 2vh, 1.5rem);
+  min-height: calc(100vh - 200px);
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+}
+
+.emoji-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.button-group {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.history-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto auto !important;
+  }
+  
+  .center-column {
+    position: static;
+    min-height: auto;
+  }
 }
