@@ -84,7 +84,36 @@ export function useEmojiMood() {
     }
   };
 
-  // Calculate streak (consecutive same moods)
+  // Calculate mood summary stats
+  const moodSummary = (() => {
+    if (history.length === 0) return null;
+
+    // Count occurrences of each mood
+    const moodCounts: Record<string, number> = {};
+    history.forEach(entry => {
+      moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+    });
+
+    // Find most common mood (ES2015 compatible way)
+    const moods = Object.keys(moodCounts);
+    let mostCommonMood = moods[0];
+    let mostCommonCount = moodCounts[mostCommonMood];
+    
+    moods.forEach(mood => {
+      if (moodCounts[mood] > mostCommonCount) {
+        mostCommonMood = mood;
+        mostCommonCount = moodCounts[mood];
+      }
+    });
+
+    return {
+      totalEntries: history.length,
+      mostCommonMood,
+      mostCommonCount,
+      uniqueMoods: moods.length,
+      moodCounts
+    };
+  })();
   const streak = (() => {
     if (history.length === 0) return 0;
     
@@ -110,5 +139,6 @@ export function useEmojiMood() {
     clearLastWeek,
     clearToday,
     streak,
+    moodSummary,
   };
 }
