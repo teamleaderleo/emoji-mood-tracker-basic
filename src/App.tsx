@@ -91,7 +91,7 @@ export default function App() {
           position: "sticky",
           top: 0
         }}>
-          <EmojiPicker onSelect={setMood} />
+          <EmojiPicker onSelect={setMood} isDarkMode={isDarkMode} />
           <h2 style={{ 
             margin: "0.5rem 0", 
             fontSize: "clamp(1.2rem, 4vw, 1.8rem)" 
