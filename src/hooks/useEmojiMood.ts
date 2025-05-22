@@ -9,6 +9,7 @@ export function useEmojiMood() {
   const [currentMood, setCurrentMood] = useState<string>("🤔");
   const [history, setHistory] = useState<MoodEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -29,6 +30,9 @@ export function useEmojiMood() {
         if (data.currentMood) {
           setCurrentMood(data.currentMood);
         }
+        if (typeof data.isDarkMode === 'boolean') {
+          setIsDarkMode(data.isDarkMode);
+        }
       } catch (error) {
         console.warn("Failed to load mood data from localStorage:", error);
       }
@@ -42,10 +46,11 @@ export function useEmojiMood() {
     
     const dataToSave = {
       currentMood,
-      history
+      history,
+      isDarkMode
     };
     localStorage.setItem("mood-tracker-data", JSON.stringify(dataToSave));
-  }, [currentMood, history, isLoaded]);
+  }, [currentMood, history, isDarkMode, isLoaded]);
 
   const setMood = (mood: string) => {
     setCurrentMood(mood);
@@ -114,6 +119,25 @@ export function useEmojiMood() {
       moodCounts
     };
   })();
+
+  // Pick-me-up messages based on current mood
+  const pickMeUpMessage = (() => {
+    const messages: Record<string, string> = {
+      '😊': "Keep that positive energy flowing! ✨",
+      '😢': "It's okay to feel down sometimes. You've got this! 💙",
+      '😡': "Take a deep breath. This feeling will pass. 🌬️",
+      '😴': "Rest is important. Take care of yourself! 💤",
+      '🤩': "Your excitement is contagious! Keep shining! ⭐",
+      '😱': "Overwhelming moments happen. You're stronger than you know! 💪",
+      '🤔': "Ready to track your mood? How are you feeling right now?"
+    };
+    
+    return messages[currentMood] || "Every emotion is valid. Thanks for checking in! 🌈";
+  })();
+
+  const toggleTheme = () => {
+    setIsDarkMode(prev => !prev);
+  };
   const streak = (() => {
     if (history.length === 0) return 0;
     
@@ -140,5 +164,8 @@ export function useEmojiMood() {
     clearToday,
     streak,
     moodSummary,
+    pickMeUpMessage,
+    isDarkMode,
+    toggleTheme,
   };
 }

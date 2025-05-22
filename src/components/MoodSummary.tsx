@@ -8,20 +8,28 @@ type MoodSummaryData = {
 
 type Props = {
   summary: MoodSummaryData | null;
+  isDarkMode: boolean;
 };
 
-export default function MoodSummary({ summary }: Props) {
+export default function MoodSummary({ summary, isDarkMode }: Props) {
   if (!summary) return null;
 
   const { totalEntries, mostCommonMood, mostCommonCount, uniqueMoods, moodCounts } = summary;
+
+  const theme = {
+    cardBackground: isDarkMode ? "#2d2d2d" : "#f5f5f5",
+    border: isDarkMode ? "#444" : "#ddd",
+    chipBackground: isDarkMode ? "#404040" : "#fff"
+  };
 
   return (
     <div style={{ 
       margin: "1rem 0", 
       padding: "1rem", 
-      backgroundColor: "#f5f5f5", 
+      backgroundColor: theme.cardBackground, 
       borderRadius: "8px",
-      border: "1px solid #ddd"
+      border: `1px solid ${theme.border}`,
+      transition: "background-color 0.3s ease, border-color 0.3s ease"
     }}>
       <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.1rem" }}>📊 Mood Summary</h3>
       
@@ -49,9 +57,10 @@ export default function MoodSummary({ summary }: Props) {
                   display: "inline-block", 
                   margin: "0.125rem 0.25rem",
                   padding: "0.125rem 0.25rem",
-                  backgroundColor: "#fff",
+                  backgroundColor: theme.chipBackground,
                   borderRadius: "4px",
-                  fontSize: "0.8rem"
+                  fontSize: "0.8rem",
+                  transition: "background-color 0.3s ease"
                 }}>
                   {mood} ×{moodCounts[mood]}
                 </span>
