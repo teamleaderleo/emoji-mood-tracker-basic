@@ -65,10 +65,10 @@ export default function App() {
       <div style={{
         flex: 1,
         display: "grid",
-        gridTemplateColumns: "1fr 2fr 1fr",
+        gridTemplateColumns: "minmax(250px, 1fr) minmax(300px, 2fr) minmax(250px, 1fr)",
         gap: "2rem",
         padding: "2rem",
-        alignItems: "start" // Keep items aligned to top
+        alignItems: "start"
       }}>
         
         {/* Left Column - Mood Summary */}
@@ -86,28 +86,37 @@ export default function App() {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          gap: "1rem",
-          minHeight: "calc(100vh - 200px)", // Take full available height
+          gap: "clamp(0.5rem, 2vh, 1.5rem)",
+          minHeight: "calc(100vh - 200px)",
           position: "sticky",
           top: 0
         }}>
           <EmojiPicker onSelect={setMood} />
-          <h2 style={{ margin: "0.5rem 0", fontSize: "1.8rem" }}>Current Mood: {mood || "🤔"}</h2>
+          <h2 style={{ 
+            margin: "0.5rem 0", 
+            fontSize: "clamp(1.2rem, 4vw, 1.8rem)" 
+          }}>
+            Current Mood: {mood || "🤔"}
+          </h2>
 
-          <p style={{ fontSize: "1.1rem", margin: "0.5rem 0" }}>
+          <p style={{ 
+            fontSize: "clamp(0.9rem, 3vw, 1.1rem)", 
+            margin: "0.5rem 0" 
+          }}>
             ⚡️Streak⚡️: {streak ?? 0} in a row
           </p>
 
           {/* Pick-me-up message */}
           <div style={{
-            padding: "1rem",
+            padding: "clamp(0.5rem, 2vw, 1rem)",
             backgroundColor: currentTheme.cardBackground,
             borderRadius: "12px",
             border: `1px solid ${currentTheme.border}`,
             fontStyle: "italic",
-            fontSize: "1rem",
+            fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
             transition: "background-color 0.3s ease, border-color 0.3s ease",
-            maxWidth: "400px"
+            maxWidth: "min(400px, 90%)",
+            width: "100%"
           }}>
             💭 {pickMeUpMessage}
           </div>
@@ -129,6 +138,18 @@ export default function App() {
           <MoodHistory history={history} isDarkMode={isDarkMode} />
         </div>
       </div>
+
+      {/* Mobile responsive layout */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media (max-width: 1024px) {
+            .main-grid {
+              grid-template-columns: 1fr !important;
+              grid-template-rows: auto auto auto !important;
+            }
+          }
+        `
+      }} />
     </div>
   );
 }
