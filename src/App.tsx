@@ -65,7 +65,7 @@ export default function App() {
           <div className="card card-large" style={{
             fontStyle: "italic",
             fontSize: "clamp(0.8rem, 2.5vw, 1rem)",
-            maxWidth: "min(400px, 90%)",
+            maxWidth: "min(450px, 95%)",
             width: "100%"
           }}>
             💭 {pickMeUpMessage}
