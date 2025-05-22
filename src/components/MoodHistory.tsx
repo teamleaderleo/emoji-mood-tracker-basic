@@ -21,7 +21,7 @@ export default function MoodHistory({ history, isDarkMode }: Props) {
     <div>
       <h3>History:</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", alignItems: "center" }}>
-        {blocks.map((block, blockIndex) => (
+        {blocks.reverse().map((block, blockIndex) => (
           <div 
             key={blockIndex}
             style={{
@@ -39,7 +39,7 @@ export default function MoodHistory({ history, isDarkMode }: Props) {
               </span>
             ))}
             <div style={{ fontSize: "0.7rem", marginTop: "0.25rem", opacity: 0.7 }}>
-              Block {blocks.length - blockIndex} ({block.length} mood{block.length !== 1 ? 's' : ''})
+              Block {blockIndex + 1} ({block.length} mood{block.length !== 1 ? 's' : ''})
             </div>
           </div>
         ))}
