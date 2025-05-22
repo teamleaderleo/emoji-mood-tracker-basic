@@ -1,7 +1,8 @@
 # 🧠 Emoji Mood Tracker
 
 Current state:
-![image](https://github.com/user-attachments/assets/b7a43dc9-9118-4ef0-a9dc-44b1958ed34c)
+![image](https://github.com/user-attachments/assets/c3e946c7-24b7-45e4-adf7-4e364cb7431a)
+
 
 
 This app lets users track their mood with emojis and see their mood history.
