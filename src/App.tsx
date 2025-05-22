@@ -40,49 +40,95 @@ export default function App() {
   return (
     <div
       style={{ 
-        padding: "2rem", 
-        fontFamily: "sans-serif", 
-        textAlign: "center",
         backgroundColor: currentTheme.background,
         color: currentTheme.text,
         minHeight: "100vh",
-        transition: "background-color 0.3s ease, color 0.3s ease"
+        transition: "background-color 0.3s ease, color 0.3s ease",
+        display: "flex",
+        flexDirection: "column"
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      {/* Header */}
+      <div style={{ 
+        padding: "1rem 2rem",
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        borderBottom: `1px solid ${currentTheme.border}`
+      }}>
         <div></div>
-        <h1 style={{ margin: 0 }}>🌈 Emoji Mood Tracker</h1>
+        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>🌈 Emoji Mood Tracker</h1>
         <ThemeToggle isDarkMode={isDarkMode} onToggle={toggleTheme} />
       </div>
 
-      <EmojiPicker onSelect={setMood} />
-      <h2>Current Mood: {mood || "🤔"}</h2>
-
-      <p style={{ fontSize: "1rem", marginBottom: "1rem" }}>
-        ⚡️Streak⚡️: {streak ?? 0} in a row
-      </p>
-
-      {/* Pick-me-up message */}
+      {/* Main 3-column layout */}
       <div style={{
-        margin: "1rem 0",
-        padding: "0.75rem",
-        backgroundColor: currentTheme.cardBackground,
-        borderRadius: "8px",
-        border: `1px solid ${currentTheme.border}`,
-        fontStyle: "italic",
-        fontSize: "0.9rem"
+        flex: 1,
+        display: "grid",
+        gridTemplateColumns: "1fr 2fr 1fr",
+        gap: "2rem",
+        padding: "2rem",
+        alignItems: "start" // Keep items aligned to top
       }}>
-        💭 {pickMeUpMessage}
-      </div>
+        
+        {/* Left Column - Mood Summary */}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column"
+        }}>
+          <MoodSummary summary={moodSummary} isDarkMode={isDarkMode} />
+        </div>
 
-      <MoodHistory history={history} />
-      <MoodSummary summary={moodSummary} isDarkMode={isDarkMode} />
-      <ClearButton 
-        onClearAll={clearHistory}
-        onClearWeek={clearLastWeek}
-        onClearToday={clearToday}
-        historyLength={history.length}
-      />
+        {/* Center Column - Main interaction - ALWAYS CENTERED */}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          gap: "1rem",
+          minHeight: "calc(100vh - 200px)", // Take full available height
+          position: "sticky",
+          top: 0
+        }}>
+          <EmojiPicker onSelect={setMood} />
+          <h2 style={{ margin: "0.5rem 0", fontSize: "1.8rem" }}>Current Mood: {mood || "🤔"}</h2>
+
+          <p style={{ fontSize: "1.1rem", margin: "0.5rem 0" }}>
+            ⚡️Streak⚡️: {streak ?? 0} in a row
+          </p>
+
+          {/* Pick-me-up message */}
+          <div style={{
+            padding: "1rem",
+            backgroundColor: currentTheme.cardBackground,
+            borderRadius: "12px",
+            border: `1px solid ${currentTheme.border}`,
+            fontStyle: "italic",
+            fontSize: "1rem",
+            transition: "background-color 0.3s ease, border-color 0.3s ease",
+            maxWidth: "400px"
+          }}>
+            💭 {pickMeUpMessage}
+          </div>
+
+          <ClearButton 
+            onClearAll={clearHistory}
+            onClearWeek={clearLastWeek}
+            onClearToday={clearToday}
+            historyLength={history.length}
+            isDarkMode={isDarkMode}
+          />
+        </div>
+
+        {/* Right Column - History */}
+        <div style={{ 
+          display: "flex", 
+          flexDirection: "column"
+        }}>
+          <MoodHistory history={history} isDarkMode={isDarkMode} />
+        </div>
+      </div>
     </div>
   );
 }
