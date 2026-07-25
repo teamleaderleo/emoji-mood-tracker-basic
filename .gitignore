@@ -1,1 +1,5 @@
 node_modules
+dist
+.renderprove
+.renderprove-probe
+.renderprove-repeatability

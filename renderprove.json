@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/teamleaderleo/renderprove/main/schema/manifest-v1.schema.json",
+  "version": 1,
+  "project": "emoji-mood-tracker-basic",
+  "runtime": {
+    "command": [
+      "npm",
+      "run",
+      "preview",
+      "--",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "4173",
+      "--strictPort"
+    ],
+    "port": 4173,
+    "readyPath": "/",
+    "timeoutMs": 30000,
+    "shutdownMs": 5000
+  },
+  "review": {
+    "routes": [
+      {
+        "name": "empty-state",
+        "path": "/",
+        "waitForMs": 750,
+        "fullPage": true
+      }
+    ],
+    "viewports": ["desktop", "mobile"],
+    "failOn": {
+      "consoleError": true,
+      "pageError": true,
+      "requestFailure": true,
+      "httpError": true
+    },
+    "outputDir": ".renderprove",
+    "navigationTimeoutMs": 30000
+  }
+}

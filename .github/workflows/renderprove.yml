@@ -1,0 +1,95 @@
+name: Renderprove
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-evidence:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Prepare production preview
+        run: |
+          mkdir -p .renderprove-ci
+          set -o pipefail
+          npm run renderprove:prepare 2>&1 | tee .renderprove-ci/prepare.log
+
+      - name: Check out pinned Renderprove
+        uses: actions/checkout@v5
+        with:
+          repository: teamleaderleo/renderprove
+          ref: b0784e7c5bd96e35109f3af32c914b96a4121792
+          path: .renderprove-tool
+          persist-credentials: false
+
+      - name: Build pinned worker image
+        run: |
+          playwright_version="$(node -p "require('./.renderprove-tool/package.json').dependencies.playwright")"
+          docker build \
+            --build-arg "PLAYWRIGHT_VERSION=${playwright_version}" \
+            --file .renderprove-tool/build/worker/Containerfile \
+            --tag renderprove-worker:emoji \
+            .renderprove-tool
+
+      - name: Review production preview
+        run: |
+          image_id="$(docker image inspect --format '{{.Id}}' renderprove-worker:emoji)"
+
+          docker run --rm --init --ipc=host --network=none \
+            --user "$(id -u):$(id -g)" \
+            --cap-drop=ALL --security-opt no-new-privileges \
+            --pids-limit=768 --memory=2g --cpus=2 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+            --entrypoint node \
+            --env RENDERPROVE_WORKER_IMAGE=renderprove-worker:emoji \
+            --env "RENDERPROVE_WORKER_IMAGE_ID=${image_id}" \
+            renderprove-worker:emoji \
+            /opt/renderprove/scripts/worker-identity.mjs \
+            > .renderprove-ci/worker.json
+
+          node -e "const value=require('./.renderprove-ci/worker.json'); if (value.version !== 1 || value.browser?.name !== 'chromium' || !value.fonts?.sha256) process.exit(1)"
+
+          set +e
+          docker run --rm --init --ipc=host --network=none \
+            --user "$(id -u):$(id -g)" \
+            --cap-drop=ALL --security-opt no-new-privileges \
+            --pids-limit=768 --memory=2g --cpus=2 \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+            --volume "${GITHUB_WORKSPACE}:/workspace/project:rw" \
+            renderprove-worker:emoji \
+            review /workspace/project --output .renderprove-ci --json \
+            > .renderprove-ci/review.stdout.json \
+            2> .renderprove-ci/review.stderr.txt
+          status=$?
+          set -e
+
+          cat .renderprove-ci/review.stderr.txt
+          if [ "${status}" -ne 0 ]; then exit "${status}"; fi
+
+          node -e "const value=require('./.renderprove-ci/receipt.json'); if (value.status !== 'passed' || value.cases?.length !== 2 || !value.cases.every((item) => item.artifacts?.some((artifact) => artifact.kind === 'screenshot' && artifact.sha256?.length === 64))) process.exit(1)"
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emoji-mood-renderprove
+          path: .renderprove-ci
+          if-no-files-found: error
+          retention-days: 7
+          include-hidden-files: true
