@@ -25,10 +25,12 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Prepare production preview
+      - name: Refresh npm lock and prepare production preview
         run: |
           mkdir -p .renderprove-ci
           set -o pipefail
+          npm install --package-lock-only --ignore-scripts 2>&1 | tee .renderprove-ci/lock-refresh.log
+          cp package-lock.json .renderprove-ci/generated-package-lock.json
           npm run renderprove:prepare 2>&1 | tee .renderprove-ci/prepare.log
 
       - name: Check out pinned Renderprove
