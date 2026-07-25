@@ -22,7 +22,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "renderprove:prepare": "bash scripts/prepare-renderprove.sh"
   },
   "browserslist": [
     ">0.2%",
