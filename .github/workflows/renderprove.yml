@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -25,32 +25,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Refresh npm lock and prepare production preview
+      - name: Prepare production preview
         run: |
           mkdir -p .renderprove-ci
           set -o pipefail
-          npm install --package-lock-only --ignore-scripts 2>&1 | tee .renderprove-ci/lock-refresh.log
-          cp package-lock.json .renderprove-ci/generated-package-lock.json
           npm run renderprove:prepare 2>&1 | tee .renderprove-ci/prepare.log
-
-      - name: Commit generated npm lock
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if git diff --quiet -- package-lock.json; then
-            printf 'package-lock.json is already current.\n'
-            exit 0
-          fi
-          branch="${GITHUB_HEAD_REF}"
-          current_sha="$(gh api "repos/${GITHUB_REPOSITORY}/contents/package-lock.json?ref=${branch}" --jq .sha)"
-          content="$(base64 -w0 package-lock.json)"
-          gh api --method PUT "repos/${GITHUB_REPOSITORY}/contents/package-lock.json" \
-            -f message='Update the locked TypeScript toolchain' \
-            -f branch="${branch}" \
-            -f sha="${current_sha}" \
-            -f content="${content}" \
-            > .renderprove-ci/lock-commit.json
 
       - name: Check out pinned Renderprove
         uses: actions/checkout@v5
