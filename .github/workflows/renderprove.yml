@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: b0784e7c5bd96e35109f3af32c914b96a4121792
+          ref: b2eac89ef4b26205933656f90364693729890faa
           path: .renderprove-tool
           persist-credentials: false
 
@@ -84,6 +84,42 @@ jobs:
           if [ "${status}" -ne 0 ]; then exit "${status}"; fi
 
           node -e "const value=require('./.renderprove-ci/receipt.json'); if (value.status !== 'passed' || value.cases?.length !== 2 || !value.cases.every((item) => item.artifacts?.some((artifact) => artifact.kind === 'screenshot' && artifact.sha256?.length === 64))) process.exit(1)"
+
+      - name: Detect Gemma advisory credentials
+        id: gemma-credentials
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${CLOUDFLARE_API_TOKEN}" ]; then
+            echo 'enabled=true' >> "${GITHUB_OUTPUT}"
+          else
+            echo 'enabled=false' >> "${GITHUB_OUTPUT}"
+            echo 'Cloudflare advisory secrets are absent; deterministic evidence remains complete.'
+          fi
+
+      - name: Gemma advisory review
+        if: steps.gemma-credentials.outputs.enabled == 'true'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -o pipefail
+          node .renderprove-tool/bin/renderprove.mjs advise . \
+            --receipt .renderprove-ci/receipt.json \
+            --output .renderprove-ci \
+            --include src \
+            --include package.json \
+            --include package-lock.json \
+            --include tsconfig.json \
+            --include README.md \
+            --include scripts/prepare-renderprove.sh \
+            --include .github/workflows/renderprove.yml \
+            --json \
+            > .renderprove-ci/advice.stdout.json \
+            2> .renderprove-ci/advice.stderr.txt
 
       - if: always()
         uses: actions/upload-artifact@v4

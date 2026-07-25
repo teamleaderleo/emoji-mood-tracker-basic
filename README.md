@@ -87,6 +87,21 @@ Each browser context starts with empty storage, so the initial mood, history, th
 
 The GitHub workflow builds this app before starting a network-disabled, pinned Renderprove worker. It retains renderer identity, desktop and mobile screenshots, browser diagnostics, and the versioned receipt.
 
+### Optional Gemma advisory
+
+The workflow can send a bounded, sanitized set of app files and the completed browser receipt to Cloudflare Workers AI for a secondary Gemma review. The deterministic browser review stays required; advisory concerns or provider failures never replace its result.
+
+Add these repository or environment secrets in GitHub:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+With both secrets present, the workflow runs `@cf/google/gemma-4-26b-a4b-it` after browser evidence and adds `.renderprove-ci/advice.json` to the retained artifact. Without them, the step records a clear skip message and the browser evidence remains complete.
+
+The advisory command includes only this app's source, package files, TypeScript configuration, README, preparation script, workflow, manifest, and receipt. It excludes the pinned Renderprove tool checkout. The persisted advisory artifact contains paths, digests, redaction counts, normalized findings, and usage rather than the transmitted source contents or provider token.
+
+Fork pull requests receive no Cloudflare credentials. Keep the advisory step optional and inspect Renderprove's dry-run bundle before using it with sensitive source.
+
 ## 🔧 Implementation Notes
 
 The app was built with a focus on:
