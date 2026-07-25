@@ -27,7 +27,6 @@ A basic mood tracking app that focuses on meaningful emotional check-ins rather 
   - Clear entire history
 
 - **Pick-me-up Messages** - Contextual encouragement based on your current mood
-
 - **Block-based History** - Moods grouped into digestible blocks of 7, displaying most recent first
 
 ## 🎯 Design Philosophy
@@ -65,6 +64,28 @@ npm run dev
 # Build for production
 npm run build
 ```
+
+## Browser evidence
+
+The repository includes a committed `renderprove.json` for the production Vite preview. It reviews the fresh empty state at desktop and mobile sizes after the 300 ms theme and component transitions have settled.
+
+Prepare the locked production build:
+
+```bash
+npm run renderprove:prepare
+```
+
+Run five fresh worker reviews from a sibling Renderprove checkout in the Lima guest:
+
+```bash
+cd /home/lima/projects/renderprove
+RENDERPROVE_ENROLLED_ROOT=/home/lima/projects \
+  npm run probe:repeatability -- emoji-mood-tracker-basic
+```
+
+Each browser context starts with empty storage, so the initial mood, history, theme, and copy remain deterministic. Mood timestamps enter storage only after a user selects an emoji; interaction-state evidence belongs in a later named interaction case.
+
+The GitHub workflow builds this app before starting a network-disabled, pinned Renderprove worker. It retains renderer identity, desktop and mobile screenshots, browser diagnostics, and the versioned receipt.
 
 ## 🔧 Implementation Notes
 
