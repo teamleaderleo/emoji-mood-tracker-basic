@@ -26,7 +26,10 @@ jobs:
           cache: npm
 
       - name: Prepare production preview
-        run: npm run renderprove:prepare
+        run: |
+          mkdir -p .renderprove-ci
+          set -o pipefail
+          npm run renderprove:prepare 2>&1 | tee .renderprove-ci/prepare.log
 
       - name: Check out pinned Renderprove
         uses: actions/checkout@v5
@@ -47,7 +50,6 @@ jobs:
 
       - name: Review production preview
         run: |
-          mkdir -p .renderprove-ci
           image_id="$(docker image inspect --format '{{.Id}}' renderprove-worker:emoji)"
 
           docker run --rm --init --ipc=host --network=none \
