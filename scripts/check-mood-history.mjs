@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
 
-const repositoryRoot = path.resolve(new URL('..', import.meta.url).pathname);
+const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const sourcePath = path.join(repositoryRoot, 'src/hooks/moodHistory.ts');
 const source = await fs.readFile(sourcePath, 'utf8');
 const transpiled = ts.transpileModule(source, {
