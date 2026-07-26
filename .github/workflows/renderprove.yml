@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: 3016251ed05009033c82f2aecbcf1ef3a3ff1c09
+          ref: cc3d53a049b63426ceaad5fa04188953d06217e2
           path: .renderprove-tool
           persist-credentials: false
 
@@ -123,62 +123,92 @@ jobs:
           node .renderprove-tool/bin/renderprove.mjs advise . \
             --receipt .renderprove-ci/receipt.json \
             --output .renderprove-ci \
-            --include src \
-            --include package.json \
-            --include package-lock.json \
-            --include tsconfig.json \
-            --include README.md \
-            --include scripts/prepare-renderprove.sh \
-            --include .github/workflows/renderprove.yml \
-            --timeout 120000 \
             --json \
             > .renderprove-ci/advice.stdout.json \
             2> .renderprove-ci/advice.stderr.txt
-          status=$?
-
-          if [ "${status}" -eq 0 ]; then
-            node <<'NODE'
-          const fs = require('node:fs');
-          const advicePath = '.renderprove-ci/advice.json';
-          const advice = JSON.parse(fs.readFileSync(advicePath, 'utf8'));
-          if (advice.version !== 1 || advice.authoritative !== false || !['clear', 'concern', 'unknown'].includes(advice.verdict)) {
-            throw new Error('invalid advice artifact');
-          }
-          const status = {
-            version: 1,
-            status: 'available',
-            advice: 'advice.json',
-            model: advice.model,
-            verdict: advice.verdict,
-            findings: advice.findings.length,
-            usage: advice.usage,
-          };
-          fs.writeFileSync('.renderprove-ci/advice-status.json', `${JSON.stringify(status, null, 2)}\n`);
-          const tokens = advice.usage?.total_tokens ?? 'unknown';
-          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Gemma advisory\n\n- Status: available\n- Verdict: ${advice.verdict}\n- Findings: ${advice.findings.length}\n- Model: \`${advice.model}\`\n- Tokens: ${tokens}\n`);
-          NODE
-            status=$?
-          fi
+          provider_status=$?
           set -e
 
-          if [ "${status}" -ne 0 ]; then
-            node -e "require('node:fs').writeFileSync('.renderprove-ci/advice-status.json', JSON.stringify({version:1,status:'unavailable',reason:'provider-or-structured-output-error',exitCode:Number(process.argv[1])}, null, 2) + '\n')" "${status}"
-            echo '::warning title=Gemma advisory unavailable::The deterministic browser receipt passed, but the optional provider call or structured output failed. See the retained advisory diagnostics.'
-            {
-              echo '### Gemma advisory'
-              echo
-              echo '- Status: unavailable'
-              echo '- Deterministic browser evidence: passed'
-              echo '- Diagnostics: `advice.stderr.txt` in the retained artifact'
-            } >> "${GITHUB_STEP_SUMMARY}"
-          fi
+          node - "${provider_status}" <<'NODE'
+          const fs = require('node:fs');
+          const exitCode = Number(process.argv[2]);
+          const statusPath = '.renderprove-ci/advice-status.json';
+          const advicePath = '.renderprove-ci/advice.json';
+          let status;
+
+          try {
+            status = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+          } catch {
+            status = {
+              version: 1,
+              status: 'unavailable',
+              authoritative: false,
+              reason: 'missing-or-invalid-status',
+              exitCode,
+            };
+          }
+
+          let advice = null;
+          if (status.status === 'available') {
+            try {
+              advice = JSON.parse(fs.readFileSync(advicePath, 'utf8'));
+              if (advice.version !== 1 || advice.authoritative !== false || !['clear', 'concern', 'unknown'].includes(advice.verdict)) {
+                throw new Error('invalid advice artifact');
+              }
+            } catch {
+              status = {
+                ...status,
+                status: 'unavailable',
+                reason: 'missing-or-invalid-advice',
+                exitCode,
+              };
+              advice = null;
+            }
+          }
+
+          if (exitCode !== 0 && status.status !== 'unavailable') {
+            status = {
+              ...status,
+              status: 'unavailable',
+              reason: 'advisory-command-failed',
+              exitCode,
+            };
+            advice = null;
+          }
+
+          fs.writeFileSync(statusPath, `${JSON.stringify(status, null, 2)}\n`);
+          const lines = ['### Gemma advisory', ''];
+          lines.push(`- Status: ${status.status}`);
+          lines.push('- Deterministic browser evidence: passed');
+          if (status.status === 'available' && advice) {
+            lines.push(`- Verdict: ${advice.verdict}`);
+            lines.push(`- Findings: ${advice.findings.length}`);
+            lines.push(`- Model: \`${advice.model}\``);
+            lines.push(`- Tokens: ${advice.usage?.total_tokens ?? 'unknown'}`);
+            lines.push(`- Estimated Neurons: ${status.budget?.estimatedNeurons ?? 'unknown'}`);
+            lines.push(`- Reused: ${status.reused === true ? 'yes' : 'no'}`);
+          } else {
+            lines.push(`- Reason: ${status.reason ?? 'unspecified'}`);
+            if (status.budget?.estimatedNeurons != null) {
+              lines.push(`- Estimated Neurons: ${status.budget.estimatedNeurons}`);
+              lines.push(`- Per-run ceiling: ${status.budget.maxEstimatedNeurons}`);
+            }
+            if (status.contact || status.budget?.contact) {
+              lines.push(`- Budget contact: ${status.contact ?? status.budget.contact}`);
+            }
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
+          if (status.status === 'unavailable') {
+            console.log('::warning title=Gemma advisory unavailable::The deterministic browser receipt passed, but the optional advisory is unavailable. See the retained status and stderr artifacts.');
+          }
+          NODE
 
       - name: Record skipped Gemma advisory
         if: steps.gemma-eligibility.outputs.enabled != 'true'
         env:
           REASON: ${{ steps.gemma-eligibility.outputs.reason }}
         run: |
-          node -e "require('node:fs').writeFileSync('.renderprove-ci/advice-status.json', JSON.stringify({version:1,status:'skipped',reason:process.env.REASON || 'ineligible'}, null, 2) + '\n')"
+          node -e "require('node:fs').writeFileSync('.renderprove-ci/advice-status.json', JSON.stringify({version:1,status:'skipped',authoritative:false,reason:process.env.REASON || 'ineligible'}, null, 2) + '\n')"
           {
             echo '### Gemma advisory'
             echo
