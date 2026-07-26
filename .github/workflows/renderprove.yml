@@ -130,6 +130,7 @@ jobs:
             --include README.md \
             --include scripts/prepare-renderprove.sh \
             --include .github/workflows/renderprove.yml \
+            --timeout 120000 \
             --json \
             > .renderprove-ci/advice.stdout.json \
             2> .renderprove-ci/advice.stderr.txt
