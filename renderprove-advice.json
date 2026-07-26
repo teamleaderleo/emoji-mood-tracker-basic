@@ -19,7 +19,7 @@
     "timeoutMs": 120000
   },
   "generation": {
-    "maxCompletionTokens": 3072,
+    "maxCompletionTokens": 4096,
     "maxFindings": 4,
     "maxEvidencePerFinding": 2,
     "maxStrengths": 2,
