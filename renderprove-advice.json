@@ -19,6 +19,7 @@
     "timeoutMs": 120000
   },
   "generation": {
+    "responseMode": "json-schema",
     "maxCompletionTokens": 4096,
     "maxFindings": 4,
     "maxEvidencePerFinding": 2,
