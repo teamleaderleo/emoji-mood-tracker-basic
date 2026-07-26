@@ -10,19 +10,24 @@
     "src",
     "renderprove.json",
     "package.json",
-    "tsconfig.json",
-    "scripts/prepare-renderprove.sh",
-    ".github/workflows/renderprove.yml"
+    "tsconfig.json"
   ],
   "limits": {
-    "maxFiles": 24,
-    "maxBytes": 120000,
+    "maxFiles": 20,
+    "maxBytes": 80000,
     "maxFileBytes": 64000,
     "timeoutMs": 120000
   },
+  "generation": {
+    "maxCompletionTokens": 3072,
+    "maxFindings": 4,
+    "maxEvidencePerFinding": 2,
+    "maxStrengths": 2,
+    "maxOmissions": 2
+  },
   "budget": {
     "dailyNeurons": 10000,
-    "maxEstimatedNeurons": 500,
+    "maxEstimatedNeurons": 400,
     "onExceed": "skip",
     "contact": "@teamleaderleo"
   },
