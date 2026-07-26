@@ -20,6 +20,7 @@
   },
   "generation": {
     "responseMode": "json-schema",
+    "thinking": "disabled",
     "maxCompletionTokens": 4096,
     "maxFindings": 4,
     "maxEvidencePerFinding": 2,
