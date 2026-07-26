@@ -7,6 +7,29 @@ import {
   type MoodEntry,
 } from "./moodHistory";
 
+function parseStoredHistory(value: unknown): MoodEntry[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError("Stored mood history must be an array.");
+  }
+  return value.map((entry) => {
+    if (!entry || typeof entry !== "object") {
+      throw new TypeError("Stored mood entry must be an object.");
+    }
+    const candidate = entry as { mood?: unknown; timestamp?: unknown };
+    if (typeof candidate.mood !== "string" || candidate.mood.length === 0) {
+      throw new TypeError("Stored mood entry must contain a mood string.");
+    }
+    if (typeof candidate.timestamp !== "string" && typeof candidate.timestamp !== "number") {
+      throw new TypeError("Stored mood entry must contain a timestamp.");
+    }
+    const timestamp = new Date(candidate.timestamp);
+    if (Number.isNaN(timestamp.getTime())) {
+      throw new TypeError("Stored mood entry timestamp is invalid.");
+    }
+    return { mood: candidate.mood, timestamp };
+  });
+}
+
 export function useEmojiMood() {
   const [history, setHistory] = useState<MoodEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -19,15 +42,10 @@ export function useEmojiMood() {
 
     if (saved) {
       try {
-        const data = JSON.parse(saved);
+        const data = JSON.parse(saved) as { history?: unknown; isDarkMode?: unknown };
 
-        if (data.history) {
-          // Convert timestamps back to Date objects
-          const historyWithDates = data.history.map((entry: MoodEntry) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp),
-          }));
-          setHistory(historyWithDates);
+        if (data.history !== undefined) {
+          setHistory(parseStoredHistory(data.history));
         }
         if (typeof data.isDarkMode === "boolean") {
           setIsDarkMode(data.isDarkMode);
