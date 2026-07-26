@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: cc3d53a049b63426ceaad5fa04188953d06217e2
+          ref: d687c37f95762934233f51656a6fde9b37aca6b8
           path: .renderprove-tool
           persist-credentials: false
 
@@ -185,10 +185,14 @@ jobs:
             lines.push(`- Findings: ${advice.findings.length}`);
             lines.push(`- Model: \`${advice.model}\``);
             lines.push(`- Tokens: ${advice.usage?.total_tokens ?? 'unknown'}`);
+            lines.push(`- Completion ceiling: ${status.generation?.maxCompletionTokens ?? advice.generation?.maxCompletionTokens ?? 'unknown'}`);
             lines.push(`- Estimated Neurons: ${status.budget?.estimatedNeurons ?? 'unknown'}`);
             lines.push(`- Reused: ${status.reused === true ? 'yes' : 'no'}`);
           } else {
             lines.push(`- Reason: ${status.reason ?? 'unspecified'}`);
+            if (status.generation?.maxCompletionTokens != null) {
+              lines.push(`- Completion ceiling: ${status.generation.maxCompletionTokens}`);
+            }
             if (status.budget?.estimatedNeurons != null) {
               lines.push(`- Estimated Neurons: ${status.budget.estimatedNeurons}`);
               lines.push(`- Per-run ceiling: ${status.budget.maxEstimatedNeurons}`);
