@@ -1,36 +1,53 @@
 import { useState, useEffect } from "react";
+import {
+  appendMood,
+  clearLastMood,
+  clearLastMoodBlock,
+  currentMoodFromHistory,
+  type MoodEntry,
+} from "./moodHistory";
 
-type MoodEntry = {
-  mood: string;
-  timestamp: Date;
-};
+function parseStoredHistory(value: unknown): MoodEntry[] {
+  if (!Array.isArray(value)) {
+    throw new TypeError("Stored mood history must be an array.");
+  }
+  return value.map((entry) => {
+    if (!entry || typeof entry !== "object") {
+      throw new TypeError("Stored mood entry must be an object.");
+    }
+    const candidate = entry as { mood?: unknown; timestamp?: unknown };
+    if (typeof candidate.mood !== "string" || candidate.mood.length === 0) {
+      throw new TypeError("Stored mood entry must contain a mood string.");
+    }
+    if (typeof candidate.timestamp !== "string" && typeof candidate.timestamp !== "number") {
+      throw new TypeError("Stored mood entry must contain a timestamp.");
+    }
+    const timestamp = new Date(candidate.timestamp);
+    if (Number.isNaN(timestamp.getTime())) {
+      throw new TypeError("Stored mood entry timestamp is invalid.");
+    }
+    return { mood: candidate.mood, timestamp };
+  });
+}
 
 export function useEmojiMood() {
-  const [currentMood, setCurrentMood] = useState<string>("🤔");
   const [history, setHistory] = useState<MoodEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const currentMood = currentMoodFromHistory(history);
 
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("mood-tracker-data");
-    
+
     if (saved) {
       try {
-        const data = JSON.parse(saved);
-        
-        if (data.history) {
-          // Convert timestamps back to Date objects
-          const historyWithDates = data.history.map((entry: any) => ({
-            ...entry,
-            timestamp: new Date(entry.timestamp)
-          }));
-          setHistory(historyWithDates);
+        const data = JSON.parse(saved) as { history?: unknown; isDarkMode?: unknown };
+
+        if (data.history !== undefined) {
+          setHistory(parseStoredHistory(data.history));
         }
-        if (data.currentMood) {
-          setCurrentMood(data.currentMood);
-        }
-        if (typeof data.isDarkMode === 'boolean') {
+        if (typeof data.isDarkMode === "boolean") {
           setIsDarkMode(data.isDarkMode);
         }
       } catch (error) {
@@ -40,53 +57,31 @@ export function useEmojiMood() {
     setIsLoaded(true);
   }, []);
 
-  // Save to localStorage whenever state changes (but only after initial load)
+  // Save the source-of-truth state whenever it changes, after initial load.
   useEffect(() => {
     if (!isLoaded) return;
-    
+
     const dataToSave = {
-      currentMood,
       history,
-      isDarkMode
+      isDarkMode,
     };
     localStorage.setItem("mood-tracker-data", JSON.stringify(dataToSave));
-  }, [currentMood, history, isDarkMode, isLoaded]);
+  }, [history, isDarkMode, isLoaded]);
 
   const setMood = (mood: string) => {
-    setCurrentMood(mood);
-    const newEntry: MoodEntry = {
-      mood,
-      timestamp: new Date()
-    };
-    setHistory(prev => [...prev, newEntry]);
+    setHistory((previous) => appendMood(previous, mood));
   };
 
   const clearHistory = () => {
     setHistory([]);
-    setCurrentMood("🤔");
   };
 
   const clearLastWeek = () => {
-    // Remove last 7 entries (or however many exist if less than 7)
-    const entriesToRemove = Math.min(7, history.length);
-    setHistory(prev => prev.slice(0, -entriesToRemove));
-    
-    // Reset current mood if we cleared everything
-    if (history.length <= 7) {
-      setCurrentMood("🤔");
-    }
+    setHistory((previous) => clearLastMoodBlock(previous));
   };
 
   const clearToday = () => {
-    // Remove the last entry (most recent mood)
-    if (history.length > 0) {
-      setHistory(prev => prev.slice(0, -1));
-      
-      // Reset current mood if we cleared everything
-      if (history.length === 1) {
-        setCurrentMood("🤔");
-      }
-    }
+    setHistory((previous) => clearLastMood(previous));
   };
 
   // Calculate mood summary stats
@@ -95,7 +90,7 @@ export function useEmojiMood() {
 
     // Count occurrences of each mood
     const moodCounts: Record<string, number> = {};
-    history.forEach(entry => {
+    history.forEach((entry) => {
       moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
     });
 
@@ -103,8 +98,8 @@ export function useEmojiMood() {
     const moods = Object.keys(moodCounts);
     let mostCommonMood = moods[0];
     let mostCommonCount = moodCounts[mostCommonMood];
-    
-    moods.forEach(mood => {
+
+    moods.forEach((mood) => {
       if (moodCounts[mood] > mostCommonCount) {
         mostCommonMood = mood;
         mostCommonCount = moodCounts[mood];
@@ -116,48 +111,49 @@ export function useEmojiMood() {
       mostCommonMood,
       mostCommonCount,
       uniqueMoods: moods.length,
-      moodCounts
+      moodCounts,
     };
   })();
 
   // Pick-me-up messages based on current mood
   const pickMeUpMessage = (() => {
     const messages: Record<string, string> = {
-      '😊': "Keep that positive energy flowing! ✨",
-      '😢': "It's okay to feel down sometimes. You've got this! 💙",
-      '😡': "Take a deep breath. This feeling will pass. 🌬️",
-      '😴': "Rest is important. Take care of yourself! 💤",
-      '🤩': "Your excitement is contagious! Keep shining! ⭐",
-      '😱': "Overwhelming moments happen. You're stronger than you know! 💪",
-      '🤔': "Ready to track your mood? How are you feeling right now?"
+      "😊": "Keep that positive energy flowing! ✨",
+      "😢": "It's okay to feel down sometimes. You've got this! 💙",
+      "😡": "Take a deep breath. This feeling will pass. 🌬️",
+      "😴": "Rest is important. Take care of yourself! 💤",
+      "🤩": "Your excitement is contagious! Keep shining! ⭐",
+      "😱": "Overwhelming moments happen. You're stronger than you know! 💪",
+      "🤔": "Ready to track your mood? How are you feeling right now?",
     };
-    
+
     return messages[currentMood] || "Every emotion is valid. Thanks for checking in! 🌈";
   })();
 
   const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
+    setIsDarkMode((previous) => !previous);
   };
+
   const streak = (() => {
     if (history.length === 0) return 0;
-    
+
     const lastMood = history[history.length - 1]?.mood;
     let count = 0;
-    
-    for (let i = history.length - 1; i >= 0; i--) {
-      if (history[i].mood === lastMood) {
-        count++;
+
+    for (let index = history.length - 1; index >= 0; index -= 1) {
+      if (history[index].mood === lastMood) {
+        count += 1;
       } else {
         break;
       }
     }
-    
+
     return count;
   })();
 
   return {
     mood: currentMood,
-    history: history.map(entry => entry.mood),
+    history: history.map((entry) => entry.mood),
     setMood,
     clearHistory,
     clearLastWeek,
