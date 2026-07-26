@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: d687c37f95762934233f51656a6fde9b37aca6b8
+          ref: 646aa647b59f455176d005853680d7e7a42d9e38
           path: .renderprove-tool
           persist-credentials: false
 
@@ -193,6 +193,12 @@ jobs:
             if (status.generation?.maxCompletionTokens != null) {
               lines.push(`- Completion ceiling: ${status.generation.maxCompletionTokens}`);
             }
+            if (status.diagnostic?.finishReason) {
+              lines.push(`- Provider finish reason: ${status.diagnostic.finishReason}`);
+            }
+            if (status.diagnostic?.usage?.total_tokens != null) {
+              lines.push(`- Provider tokens before failure: ${status.diagnostic.usage.total_tokens}`);
+            }
             if (status.budget?.estimatedNeurons != null) {
               lines.push(`- Estimated Neurons: ${status.budget.estimatedNeurons}`);
               lines.push(`- Per-run ceiling: ${status.budget.maxEstimatedNeurons}`);
@@ -203,7 +209,10 @@ jobs:
           }
           fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join('\n')}\n`);
           if (status.status === 'unavailable') {
-            console.log('::warning title=Gemma advisory unavailable::The deterministic browser receipt passed, but the optional advisory is unavailable. See the retained status and stderr artifacts.');
+            const warning = status.reason === 'ADVICE_COMPLETION_EXHAUSTED'
+              ? 'The deterministic browser receipt passed, but Gemma exhausted the configured completion reserve before returning its advisory. See the retained status artifact and contact.'
+              : 'The deterministic browser receipt passed, but the optional advisory is unavailable. See the retained status and stderr artifacts.';
+            console.log(`::warning title=Gemma advisory unavailable::${warning}`);
           }
           NODE
 
