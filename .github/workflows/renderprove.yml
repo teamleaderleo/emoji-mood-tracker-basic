@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: d7032fe6d8fa9ee692bd6d0e2e8ec291150dabb8
+          ref: 16648a759f635dc0369a95f9ebca1b2b08b92601
           path: .renderprove-tool
           persist-credentials: false
 
