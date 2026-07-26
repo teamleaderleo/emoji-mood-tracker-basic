@@ -6,6 +6,7 @@ repo_root="$(CDPATH= cd -- "${script_dir}/.." && pwd)"
 cd "${repo_root}"
 
 npm ci
+npm run test:state
 npm run build
 
 test -f dist/index.html || {
