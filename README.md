@@ -89,18 +89,20 @@ The GitHub workflow builds this app before starting a network-disabled, pinned R
 
 ### Optional Gemma advisory
 
-The workflow can send a bounded, sanitized set of app files and the completed browser receipt to Cloudflare Workers AI for a secondary Gemma review. The deterministic browser review stays required; advisory concerns or provider failures never replace its result.
+The workflow can send the completed browser receipt and a focused, sanitized app bundle to Cloudflare Workers AI for a secondary Gemma review. The deterministic browser review stays required; advisory concerns, skips, and provider failures never replace its result.
 
 Add these repository or environment secrets in GitHub:
 
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
 
-With both secrets present, the workflow runs `@cf/google/gemma-4-26b-a4b-it` after browser evidence and adds `.renderprove-ci/advice.json` to the retained artifact. Without them, the step records a clear skip message and the browser evidence remains complete.
+`renderprove-advice.json` owns the app-specific questions, included files, byte/file limits, 500-Neuron per-run ceiling, 10,000-Neuron daily planning guide, and exact-digest cache policy. It excludes lockfiles by default and tells an agent to contact `@teamleaderleo` before widening the budget.
 
-The advisory command includes only this app's source, package files, TypeScript configuration, README, preparation script, workflow, manifest, and receipt. It excludes the pinned Renderprove tool checkout. The persisted advisory artifact contains paths, digests, redaction counts, normalized findings, and usage rather than the transmitted source contents or provider token.
+With both secrets present, the workflow runs `@cf/google/gemma-4-26b-a4b-it` after browser evidence. The retained `advice-status.json` says `available`, `skipped`, or `unavailable`; `advice.json` exists only for an available result. Without credentials, the workflow records an explicit skip and the browser evidence remains complete.
 
-Fork pull requests receive no Cloudflare credentials. Keep the advisory step optional and inspect Renderprove's dry-run bundle before using it with sensitive source.
+The policy includes this app's source, manifest, package metadata, TypeScript configuration, preparation script, workflow, and browser receipt. It excludes the package lock and the in-tree pinned Renderprove checkout. Persisted artifacts contain paths, digests, redaction counts, normalized findings, status, budget estimates, and provider usage rather than transmitted source contents or credentials.
+
+Fork pull requests receive no Cloudflare credentials. Inspect `renderprove advise --dry-run --json` before using the advisory with sensitive source.
 
 ## 🔧 Implementation Notes
 

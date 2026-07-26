@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "mode": "targeted",
+  "questions": [
+    "Can deleting one mood entry or the latest seven entries leave the displayed current mood inconsistent with the retained history?",
+    "Do the browser receipt, application state transitions, or rendered empty state contradict the behaviour declared by this project?",
+    "Report only concrete correctness, accessibility, or maintainability concerns supported by the included evidence."
+  ],
+  "include": [
+    "src",
+    "renderprove.json",
+    "package.json",
+    "tsconfig.json",
+    "scripts/prepare-renderprove.sh",
+    ".github/workflows/renderprove.yml"
+  ],
+  "limits": {
+    "maxFiles": 24,
+    "maxBytes": 120000,
+    "maxFileBytes": 64000,
+    "timeoutMs": 120000
+  },
+  "budget": {
+    "dailyNeurons": 10000,
+    "maxEstimatedNeurons": 500,
+    "onExceed": "skip",
+    "contact": "@teamleaderleo"
+  },
+  "cache": {
+    "reuse": true
+  }
+}
