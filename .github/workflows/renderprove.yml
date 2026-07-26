@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: teamleaderleo/renderprove
-          ref: b2eac89ef4b26205933656f90364693729890faa
+          ref: 3016251ed05009033c82f2aecbcf1ef3a3ff1c09
           path: .renderprove-tool
           persist-credentials: false
 
@@ -92,28 +92,34 @@ jobs:
 
           node -e "const value=require('./.renderprove-ci/receipt.json'); if (value.status !== 'passed' || value.cases?.length !== 2 || !value.cases.every((item) => item.artifacts?.some((artifact) => artifact.kind === 'screenshot' && artifact.sha256?.length === 64))) process.exit(1)"
 
-      - name: Detect Gemma advisory credentials
-        id: gemma-credentials
-        if: (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && (github.event_name != 'workflow_dispatch' || inputs.advisory)
+      - name: Detect Gemma advisory eligibility
+        id: gemma-eligibility
         env:
+          ELIGIBLE_SOURCE: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          ADVISORY_REQUESTED: ${{ github.event_name != 'workflow_dispatch' || inputs.advisory }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          if [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${CLOUDFLARE_API_TOKEN}" ]; then
-            echo 'enabled=true' >> "${GITHUB_OUTPUT}"
-          else
-            echo 'enabled=false' >> "${GITHUB_OUTPUT}"
-            echo 'Cloudflare advisory secrets are absent; deterministic evidence remains complete.'
+          enabled=false
+          reason=credentials-missing
+          if [ "${ELIGIBLE_SOURCE}" != 'true' ]; then
+            reason=fork-pull-request
+          elif [ "${ADVISORY_REQUESTED}" != 'true' ]; then
+            reason=manual-disabled
+          elif [ -n "${CLOUDFLARE_ACCOUNT_ID}" ] && [ -n "${CLOUDFLARE_API_TOKEN}" ]; then
+            enabled=true
+            reason=ready
           fi
+          echo "enabled=${enabled}" >> "${GITHUB_OUTPUT}"
+          echo "reason=${reason}" >> "${GITHUB_OUTPUT}"
 
       - name: Gemma advisory review
-        if: steps.gemma-credentials.outputs.enabled == 'true'
-        continue-on-error: true
+        if: steps.gemma-eligibility.outputs.enabled == 'true'
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          set -o pipefail
+          set +e
           node .renderprove-tool/bin/renderprove.mjs advise . \
             --receipt .renderprove-ci/receipt.json \
             --output .renderprove-ci \
@@ -124,9 +130,62 @@ jobs:
             --include README.md \
             --include scripts/prepare-renderprove.sh \
             --include .github/workflows/renderprove.yml \
+            --timeout 120000 \
             --json \
             > .renderprove-ci/advice.stdout.json \
             2> .renderprove-ci/advice.stderr.txt
+          status=$?
+
+          if [ "${status}" -eq 0 ]; then
+            node <<'NODE'
+          const fs = require('node:fs');
+          const advicePath = '.renderprove-ci/advice.json';
+          const advice = JSON.parse(fs.readFileSync(advicePath, 'utf8'));
+          if (advice.version !== 1 || advice.authoritative !== false || !['clear', 'concern', 'unknown'].includes(advice.verdict)) {
+            throw new Error('invalid advice artifact');
+          }
+          const status = {
+            version: 1,
+            status: 'available',
+            advice: 'advice.json',
+            model: advice.model,
+            verdict: advice.verdict,
+            findings: advice.findings.length,
+            usage: advice.usage,
+          };
+          fs.writeFileSync('.renderprove-ci/advice-status.json', `${JSON.stringify(status, null, 2)}\n`);
+          const tokens = advice.usage?.total_tokens ?? 'unknown';
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Gemma advisory\n\n- Status: available\n- Verdict: ${advice.verdict}\n- Findings: ${advice.findings.length}\n- Model: \`${advice.model}\`\n- Tokens: ${tokens}\n`);
+          NODE
+            status=$?
+          fi
+          set -e
+
+          if [ "${status}" -ne 0 ]; then
+            node -e "require('node:fs').writeFileSync('.renderprove-ci/advice-status.json', JSON.stringify({version:1,status:'unavailable',reason:'provider-or-structured-output-error',exitCode:Number(process.argv[1])}, null, 2) + '\n')" "${status}"
+            echo '::warning title=Gemma advisory unavailable::The deterministic browser receipt passed, but the optional provider call or structured output failed. See the retained advisory diagnostics.'
+            {
+              echo '### Gemma advisory'
+              echo
+              echo '- Status: unavailable'
+              echo '- Deterministic browser evidence: passed'
+              echo '- Diagnostics: `advice.stderr.txt` in the retained artifact'
+            } >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Record skipped Gemma advisory
+        if: steps.gemma-eligibility.outputs.enabled != 'true'
+        env:
+          REASON: ${{ steps.gemma-eligibility.outputs.reason }}
+        run: |
+          node -e "require('node:fs').writeFileSync('.renderprove-ci/advice-status.json', JSON.stringify({version:1,status:'skipped',reason:process.env.REASON || 'ineligible'}, null, 2) + '\n')"
+          {
+            echo '### Gemma advisory'
+            echo
+            echo '- Status: skipped'
+            echo "- Reason: ${REASON:-ineligible}"
+            echo '- Deterministic browser evidence: passed'
+          } >> "${GITHUB_STEP_SUMMARY}"
 
       - if: always()
         uses: actions/upload-artifact@v4
